@@ -131,6 +131,19 @@ async function run() {
             res.json(result)
         })
 
+        // update Products in Stock  status 
+        app.put('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    InStock: false,
+                },
+            };
+            const result = await productsCollection.updateOne(query, updateDoc, options);
+            res.json(result)
+        })
         // Upsert system for google login 
         app.put('/users', async (req, res) => {
             const user = req.body;
