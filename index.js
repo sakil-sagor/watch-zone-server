@@ -142,7 +142,8 @@ async function run() {
         })
 
 
-        // make admin 
+
+        // make admin  ok 
         app.put('/users/admin', async (req, res) => {
             const user = req.body;
             console.log(user);
