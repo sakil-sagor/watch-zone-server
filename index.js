@@ -10,11 +10,8 @@ const port = process.env.PORT || 5000
 var cors = require('cors')
 app.use(cors())
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.9clk0.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-
-
 
 async function run() {
     try {
@@ -24,9 +21,6 @@ async function run() {
         const ordersCollection = database.collection("orders");
         const reviewsCollection = database.collection("reviews");
         const usersCollection = database.collection("users");
-
-
-
 
         // get all products
         app.get('/products', async (req, res) => {
@@ -75,7 +69,6 @@ async function run() {
             res.send(users);
         })
 
-
         // confirm admin email 
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
@@ -86,7 +79,6 @@ async function run() {
                 isAdmin = true;
             }
             res.json({ admin: isAdmin })
-
         })
 
         // add single product 
@@ -153,8 +145,6 @@ async function run() {
             const result = await usersCollection.updateOne(filter, updateDoc, options);
             res.json(result);
         })
-
-
 
         // make admin  ok 
         app.put('/users/admin', async (req, res) => {
