@@ -4,7 +4,7 @@ const { MongoClient } = require('mongodb');
 const ObjectId = require('mongodb').ObjectId;
 require('dotenv').config()
 app.use(express.json())
-
+const stripe = require("stripe")(process.env.STRIPE_SECRET)
 const port = process.env.PORT || 5000
 // middleware
 var cors = require('cors')
@@ -21,6 +21,7 @@ async function run() {
         const ordersCollection = database.collection("orders");
         const reviewsCollection = database.collection("reviews");
         const usersCollection = database.collection("users");
+        const addToCartCollection = database.collection("addToCart");
 
         // get all products
         app.get('/products', async (req, res) => {
@@ -29,11 +30,20 @@ async function run() {
             res.send(products);
         })
 
+
+
         // get single product details 
         app.get('/products/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await productsCollection.findOne(query)
+            res.json(result);
+        })
+        // get single product details 
+        app.get('/addToCart/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await addToCartCollection.findOne(query)
             res.json(result);
         })
 
@@ -81,6 +91,31 @@ async function run() {
             res.json({ admin: isAdmin })
         })
 
+        // get all add to cart
+        app.get('/addToCart', async (req, res) => {
+            const email = req.query.email;
+            query = { email: email }
+            const cursor = addToCartCollection.find(query);
+            const addToCart = await cursor.toArray();
+            res.send(addToCart);
+        })
+
+        // get single add to cart order for payment
+        app.get('/addToCart/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await addToCartCollection.findOne(query)
+            res.send(result);
+        })
+
+        //add to cart product
+        app.post('/addToCart', async (req, res) => {
+            const addToCart = req.body;
+            const result = await addToCartCollection.insertOne(addToCart)
+            res.json(result)
+        })
+
+
         // add single product 
         app.post('/products', async (req, res) => {
             const product = req.body;
@@ -107,6 +142,22 @@ async function run() {
             const result = await usersCollection.insertOne(user)
 
             res.json(result);
+        })
+
+        // update addToCart quentity 
+        app.put('/addToCart/:id', async (req, res) => {
+            const update = req.body.quantity;
+            const payment = req.body
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            // const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    quantity: update,
+                },
+            };
+            const result = await addToCartCollection.updateOne(query, updateDoc);
+            res.json(result)
         })
 
         // update user orders status 
@@ -149,9 +200,7 @@ async function run() {
         // make admin  ok 
         app.put('/users/admin', async (req, res) => {
             const user = req.body;
-            console.log(user);
             const filter = { email: user.admin };
-            console.log(filter);
             const updateDoc = { $set: { role: 'admin' } };
             const result = await usersCollection.updateOne(filter, updateDoc);
             res.json(result);
@@ -169,6 +218,32 @@ async function run() {
             const result = await productsCollection.deleteOne(query);
             res.json(result)
         })
+
+
+        // payment method for stripe 
+        app.post("/create-payment-intent", async (req, res) => {
+            const paymentInfo = req.body;
+            const amount = paymentInfo.price * 100;
+
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"],
+            });
+
+            res.json({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+
+
+
+
+
+
+
+
 
 
     } finally {
