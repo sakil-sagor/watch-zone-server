@@ -111,10 +111,17 @@ async function run() {
         //add to cart product
         app.post('/addToCart', async (req, res) => {
             const addToCart = req.body;
-            const result = await addToCartCollection.insertOne(addToCart)
-            res.json(result)
+            const cartProductId = addToCart.productId;
+            const cartProductName = addToCart.productName;
+            const query = { productId: cartProductId, productName: cartProductName }
+            const result = await addToCartCollection.findOne(query)
+            if (!result) {
+                const result = await addToCartCollection.insertOne(addToCart)
+                res.json(result);
+            } else {
+                res.json(0);
+            }
         })
-
 
         // add single product 
         app.post('/products', async (req, res) => {
@@ -212,10 +219,22 @@ async function run() {
             const result = await ordersCollection.deleteOne(query);
             res.json(result)
         })
+        // single product delete 
         app.delete('/products/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const result = await productsCollection.deleteOne(query);
+            res.json(result)
+        })
+
+        // single add to cart delete 
+        app.delete('/addToCart/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log("ami", id);
+            const query = { _id: ObjectId(id) };
+            console.log(query);
+            const result = await addToCartCollection.deleteOne(query);
+            console.log(result);
             res.json(result)
         })
 
