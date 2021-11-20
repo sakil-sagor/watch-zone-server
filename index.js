@@ -113,7 +113,8 @@ async function run() {
             const addToCart = req.body;
             const cartProductId = addToCart.productId;
             const cartProductName = addToCart.productName;
-            const query = { productId: cartProductId, productName: cartProductName }
+            const email = addToCart.email;
+            const query = { productId: cartProductId, email: email, productName: cartProductName }
             const result = await addToCartCollection.findOne(query)
             if (!result) {
                 const result = await addToCartCollection.insertOne(addToCart)
