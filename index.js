@@ -23,11 +23,22 @@ async function run() {
         const usersCollection = database.collection("users");
         const addToCartCollection = database.collection("addToCart");
 
-        // get all products
+
+
+        // get all products or  products by search result
         app.get('/products', async (req, res) => {
-            const cursor = productsCollection.find({});
-            const products = await cursor.toArray();
-            res.send(products);
+            const search = req.query.search;
+            if (search) {
+                const query = { productName: { $regex: search, $options: '$i' } }
+                const cursor = productsCollection.find(query);
+                const products = await cursor.toArray();
+                res.send(products);
+            } else {
+                const cursor = productsCollection.find({});
+                const products = await cursor.toArray();
+                res.send(products);
+            }
+
         })
 
 
@@ -94,7 +105,7 @@ async function run() {
         // get all add to cart
         app.get('/addToCart', async (req, res) => {
             const email = req.query.email;
-            query = { email: email }
+            const query = { email: email }
             const cursor = addToCartCollection.find(query);
             const addToCart = await cursor.toArray();
             res.send(addToCart);
