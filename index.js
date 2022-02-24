@@ -25,23 +25,33 @@ async function run() {
 
 
 
-        // get all products or  products by search result
+        // get products with search, pagination 
         app.get('/products', async (req, res) => {
             const search = req.query.search;
+            const page = req.query.page;
+            const size = parseInt(req.query.size);
+            console.log(search, page, size);
+            let products;
             if (search) {
                 const query = { productName: { $regex: search, $options: '$i' } }
                 const cursor = productsCollection.find(query);
-                const products = await cursor.toArray();
-                res.send(products);
+                const count = await cursor.count();
+                products = await cursor.skip(page * size).limit(size).toArray();
+                res.send({
+                    count,
+                    products
+                });
             } else {
                 const cursor = productsCollection.find({});
-                const products = await cursor.toArray();
-                res.send(products);
+                const count = await cursor.count();
+                products = await cursor.skip(page * size).limit(size).toArray();
+                res.send({
+                    count,
+                    products
+                });
             }
 
         })
-
-
 
         // get single product details 
         app.get('/products/:id', async (req, res) => {
@@ -142,12 +152,14 @@ async function run() {
             res.json(result);
         })
 
-        // add single review 
+        // add customer website single review 
         app.post('/reviews', async (req, res) => {
             const review = req.body;
             const result = await reviewsCollection.insertOne(review)
             res.json(result);
         })
+        // add product review 
+        app.post('/products/:id')
 
         // add single order 
         app.post('/orders', async (req, res) => {
@@ -195,17 +207,20 @@ async function run() {
 
         // update Products in Stock  status 
         app.put('/products/:id', async (req, res) => {
+            const update = req.body.InStock;
             const id = req.params.id;
+            console.log(update, id);
             const query = { _id: ObjectId(id) };
-            const options = { upsert: true };
+            // const options = { upsert: true };
             const updateDoc = {
                 $set: {
-                    InStock: false,
+                    InStock: update,
                 },
             };
-            const result = await productsCollection.updateOne(query, updateDoc, options);
+            const result = await productsCollection.updateOne(query, updateDoc);
             res.json(result)
         })
+
         // Upsert system for google login 
         app.put('/users', async (req, res) => {
             const user = req.body;
