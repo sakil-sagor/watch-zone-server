@@ -30,26 +30,24 @@ async function run() {
             const search = req.query.search;
             const page = req.query.page;
             const size = parseInt(req.query.size);
-            console.log(search, page, size);
             let products;
+            let count;
             if (search) {
                 const query = { productName: { $regex: search, $options: '$i' } }
                 const cursor = productsCollection.find(query);
-                const count = await cursor.count();
+                count = await cursor.count();
                 products = await cursor.skip(page * size).limit(size).toArray();
-                res.send({
-                    count,
-                    products
-                });
             } else {
                 const cursor = productsCollection.find({});
-                const count = await cursor.count();
+                count = await cursor.count();
                 products = await cursor.skip(page * size).limit(size).toArray();
-                res.send({
-                    count,
-                    products
-                });
             }
+            res.send({
+                count,
+                products
+            });
+
+
 
         })
 
