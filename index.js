@@ -16,40 +16,44 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         await client.connect();
-        const database = client.db("Time-Zone");
+        const database = client.db("test-for-newcollections");
         const productsCollection = database.collection("products");
         const ordersCollection = database.collection("orders");
         const reviewsCollection = database.collection("reviews");
         const usersCollection = database.collection("users");
         const addToCartCollection = database.collection("addToCart");
+        const categorysCollection = database.collection("category");
 
 
 
         // get products with search, pagination 
+
         app.get('/products', async (req, res) => {
-            const search = req.query.search;
-            const page = req.query.page;
-            const size = parseInt(req.query.size);
-            let products;
-            let count;
-            if (search) {
-                const query = { productName: { $regex: search, $options: '$i' } }
+            try {
+                const search = req.query.search;
+                const page = parseInt(req.query.page || 0); // default to 0 if not provided
+                const size = parseInt(req.query.size || 10); // default to 10 if not provided
+
+                let query = {};
+                if (search) {
+                    query = { productName: { $regex: search, $options: 'i' } };
+                }
+
                 const cursor = productsCollection.find(query);
-                count = await cursor.count();
-                products = await cursor.skip(page * size).limit(size).toArray();
-            } else {
-                const cursor = productsCollection.find({});
-                count = await cursor.count();
-                products = await cursor.skip(page * size).limit(size).toArray();
+                const count = await cursor.count();
+
+                const products = await cursor.skip(page * size).limit(size).toArray();
+
+                res.json({
+                    count,
+                    products
+                });
+            } catch (error) {
+                console.error("Error fetching products:", error);
+                res.status(500).send("Internal Server Error");
             }
-            res.send({
-                count,
-                products
-            });
+        });
 
-
-
-        })
 
         // get single product details 
         app.get('/products/:id', async (req, res) => {
@@ -118,6 +122,13 @@ async function run() {
             const addToCart = await cursor.toArray();
             res.send(addToCart);
         })
+        // get all categorys
+        app.get('/allBrands', async (req, res) => {
+
+            const cursor = categorysCollection.find();
+            const categorys = await cursor.toArray();
+            res.send(categorys);
+        })
 
         // get single add to cart order for payment
         app.get('/addToCart/:id', async (req, res) => {
@@ -147,6 +158,14 @@ async function run() {
         app.post('/products', async (req, res) => {
             const product = req.body;
             const result = await productsCollection.insertOne(product)
+            res.json(result);
+        })
+
+        // add single category 
+        app.post('/addbrands', async (req, res) => {
+            console.log(req.body);
+            const product = req.body;
+            const result = await categorysCollection.insertOne(product)
             res.json(result);
         })
 
